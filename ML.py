@@ -8,7 +8,8 @@ import pandas as pd
 import numpy as np
 import sqlite3
 
-FILE_PATH = 'Human-UTR3-Seed-All.txt'
+SFOLD_PATH = 'Human-UTR3-Seed-All.txt'
+TARBASE_PATH = 'tarbase_data_V6.0.csv'
 SEPARATOR = '\t'
 
 # Getting data from miRNA - mRNA database
@@ -33,7 +34,7 @@ df['is_train'] = np.random.uniform(0, 1, len(df)) <= .75
 
 df['species'] = pd.Categorical(iris.target, iris.target_names)
 df.head()
-
+rf_preds = iris.target_names[rfc.predict(test[features])]
 train, test = df[df['is_train'] == True], df[df['is_train'] == False]
 
 features = df.columns[:4]
@@ -47,7 +48,7 @@ y, _ = pd.factorize(train['species'])
 rfc = RandomForestClassifier(n_jobs = 2)
 rfc.fit(train[features], y)
 
-rf_preds = iris.target_names[rfc.predict(test[features])]
+
 print(pd.crosstab(test['species'], rf_preds, rownames=['actual'], colnames=['rf_preds']))
 
 #
