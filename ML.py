@@ -8,47 +8,31 @@ import pandas as pd
 import numpy as np
 import sqlite3
 
-FILE_PATH = 'Human-UTR3-Seed-All.txt'
-SEPARATOR = '\t'
+MIRANDA_DATA = '/Users/alex/Projects/mi-pred/miranda_latest.txt'
+MIRANDA_HEAD = '/Users/alex/Projects/mi-pred/mirandaHeaders.tsv'
+SEP = '\t'
 
-# Getting data from miRNA - mRNA database
-# cnx = sqlite3.connect('mi-pred.sqlite')
-#
-# mrna_df = pd.io.sql.read_frame('select * from mrna', cnx)
-# mirna_df = pd.io.sql.read_frame('select * from mirna', cnx)
+mir_head = pd.read_csv(MIRANDA_HEAD, sep=SEP)
+mir_df = pd.read_csv(MIRANDA_DATA, sep=SEP, header=None)
+mir_df.columns = mir_head.columns.values.tolist()
 
-# Example data extraction
-iris = load_iris()
-df = pd.DataFrame(iris.data, columns = iris.feature_names)
 
-# df = pd.read_csv(FILE_PATH, sep=SEPARATOR)
-# df['is_target'] = np.random.uniform(0, 1, len(df)) <= .75
-
-#
-# TODO: Feature extraction goes here
-#
+mir_df['target'] = mir_df.mirna + '\t' + mir_df.ensgid
 
 # Cross-validation
-df['is_train'] = np.random.uniform(0, 1, len(df)) <= .75
+mir_df['is_train'] = np.random.uniform(0, 1, len(mir_df)) <= .75
 
-df['species'] = pd.Categorical(iris.target, iris.target_names)
-df.head()
+train, test = mir_df[mir_df['is_train'] == True], mir_df[mir_df['is_train'] == False]
 
-train, test = df[df['is_train'] == True], df[df['is_train'] == False]
+features = mir_df.columns[4:-2]
 
-features = df.columns[:4]
+y, _ = pd.factorize(train['target'])
 
-y, _ = pd.factorize(train['species'])
-
-#
-# TODO: Random Forest goes here
-#
-
-rfc = RandomForestClassifier(n_jobs = 2)
+rfc = RandomForestClassifier(n_jobs=2)
 rfc.fit(train[features], y)
 
-rf_preds = iris.target_names[rfc.predict(test[features])]
-print(pd.crosstab(test['species'], rf_preds, rownames=['actual'], colnames=['rf_preds']))
+rf_preds = mir_df.target[rfc.predict(test[features])]
+print(pd.crosstab(test['target'], rf_preds, rownames=['actual'], colnames=['rf_preds']))
 
 #
 # TODO: SVM goes here
@@ -56,5 +40,5 @@ print(pd.crosstab(test['species'], rf_preds, rownames=['actual'], colnames=['rf_
 svc = svm.SVC(kernel='linear')
 svc.fit(train[features], y)
 
-sv_preds = iris.target_names[svc.predict(test[features])]
-print(pd.crosstab(test['species'], sv_preds, rownames=['actual'], colnames=['sv_preds']))
+sv_preds = mir_df.target[svc.predict(test[features])]
+print(pd.crosstab(test['target'], sv_preds, rownames=['actual'], colnames=['sv_preds']))
